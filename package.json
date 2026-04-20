@@ -1,0 +1,12 @@
+{
+  "name": "time-capsule",
+  "version": "1.0.0",
+  "description": "时间胶囊网页",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

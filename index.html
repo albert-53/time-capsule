@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间胶囊 - Time Capsule</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;500;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a1a 100%);
+            font-family: 'Noto Sans SC', system-ui, sans-serif;
+            color: #e8e8f0;
+            overflow-x: hidden;
+        }
+
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 0 80px;
+        }
+
+        .hero h1 {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 4.5rem;
+            background: linear-gradient(135deg, #d4af37 0%, #f5a623 50%, #d4af37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 60px rgba(212, 175, 55, 0.5);
+            margin-bottom: 16px;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.3)); }
+            to { filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.6)); }
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #8888aa;
+            letter-spacing: 4px;
+        }
+
+        .hourglass-icon {
+            width: 80px;
+            height: 80px;
+            margin: 30px auto;
+            animation: flip 4s ease-in-out infinite;
+        }
+
+        @keyframes flip {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+
+        .editor-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            margin-bottom: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #8888aa;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .title-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(212, 175, 55, 0.2);
+            border-radius: 12px;
+            font-size: 1.2rem;
+            color: #e8e8f0;
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .title-input:focus {
+            outline: none;
+            border-color: #d4af37;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .title-input::placeholder {
+            color: #555577;
+        }
+
+        .content-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(212, 175, 55, 0.2);
+            border-radius: 12px;
+            font-size: 1rem;
+            color: #e8e8f0;
+            font-family: 'Noto Sans SC', sans-serif;
+            resize: vertical;
+            line-height: 1.8;
+            transition: all 0.3s ease;
+        }
+
+        .content-textarea:focus {
+            outline: none;
+            border-color: #d4af37;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .content-textarea::placeholder {
+            color: #555577;
+        }
+
+        .time-selector {
+            margin-bottom: 32px;
+        }
+
+        .time-selector label {
+            display: block;
+            font-size: 0.9rem;
+            color: #8888aa;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+        }
+
+        .time-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .time-btn {
+            position: relative;
+            padding: 14px 24px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            color: #e8e8f0;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .time-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .time-btn:hover::before {
+            left: 100%;
+        }
+
+        .time-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .time-btn.selected {
+            border-color: var(--btn-color);
+            box-shadow: 0 0 25px var(--btn-glow);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .time-btn[data-time="2h"] { --btn-color: #4a9eff; --btn-glow: rgba(74, 158, 255, 0.4); }
+        .time-btn[data-time="1d"] { --btn-color: #4ade80; --btn-glow: rgba(74, 222, 128, 0.4); }
+        .time-btn[data-time="1mo"] { --btn-color: #fb923c; --btn-glow: rgba(251, 146, 60, 0.4); }
+        .time-btn[data-time="1y"] { --btn-color: #a855f7; --btn-glow: rgba(168, 85, 247, 0.4); }
+        .time-btn[data-time="5y"] { --btn-color: #ef4444; --btn-glow: rgba(239, 68, 68, 0.4); }
+        .time-btn[data-time="10y"] { --btn-color: #d4af37; --btn-glow: rgba(212, 175, 55, 0.4); }
+
+        .time-btn .badge {
+            display: none;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            background: var(--btn-color);
+            border-radius: 10px;
+            margin-left: 8px;
+            color: #000;
+            font-weight: 700;
+        }
+
+        .time-btn.selected .badge {
+            display: inline-block;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 16px 40px;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e8e8f0;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #d4af37 0%, #f5a623 100%);
+            color: #0a0a1a;
+            font-weight: 700;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.6);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .capsules-section {
+            margin-top: 60px;
+        }
+
+        .section-title {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #d4af37;
+            text-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .capsules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .capsule-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .capsule-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(212, 175, 55, 0.1), transparent 30%);
+            animation: rotate 4s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .capsule-card:hover::before {
+            opacity: 1;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .capsule-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            border-color: rgba(212, 175, 55, 0.3);
+        }
+
+        .capsule-card.sealed {
+            border-color: rgba(123, 104, 238, 0.3);
+        }
+
+        .capsule-card.sealed:hover {
+            border-color: rgba(123, 104, 238, 0.5);
+            box-shadow: 0 20px 60px rgba(123, 104, 238, 0.2);
+        }
+
+        .capsule-card.unlocked {
+            border-color: rgba(212, 175, 55, 0.5);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(212, 175, 55, 0.5); }
+        }
+
+        .capsule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .capsule-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #e8e8f0;
+            flex: 1;
+        }
+
+        .capsule-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-sealed {
+            background: rgba(123, 104, 238, 0.2);
+            color: #a78bfa;
+            border: 1px solid rgba(123, 104, 238, 0.3);
+        }
+
+        .status-unlocked {
+            background: rgba(212, 175, 55, 0.2);
+            color: #d4af37;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .countdown {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.4rem;
+            color: #7b68ee;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .countdown.unlocked {
+            color: #d4af37;
+        }
+
+        .countdown-label {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 0.8rem;
+            color: #8888aa;
+            margin-top: 8px;
+        }
+
+        .capsule-content {
+            display: none;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            margin-top: 16px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .capsule-card.expanded .capsule-content {
+            display: block;
+        }
+
+        .capsule-actions {
+            display: none;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .capsule-card.expanded .capsule-actions {
+            display: flex;
+        }
+
+        .capsule-actions .btn {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8888aa;
+        }
+
+        .empty-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 24px;
+            opacity: 0.3;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 28px;
+            background: rgba(212, 175, 55, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            color: #d4af37;
+            font-size: 1rem;
+            z-index: 1000;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, #1a1a3a 0%, #0a0a1a 100%);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal h3 {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2rem;
+            color: #d4af37;
+            margin-bottom: 20px;
+        }
+
+        .modal p {
+            color: #8888aa;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .draft-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #4ade80;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        .draft-indicator::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 3rem;
+            }
+
+            .editor-card {
+                padding: 24px;
+            }
+
+            .time-btn {
+                padding: 12px 18px;
+                font-size: 0.85rem;
+            }
+
+            .btn {
+                padding: 14px 28px;
+                font-size: 1rem;
+            }
+
+            .capsules-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+    
+    <div class="container">
+        <section class="hero">
+            <h1>时间胶囊</h1>
+            <p>封存此刻，穿越未来</p>
+            <svg class="hourglass-icon" viewBox="0 0 100 100" fill="none">
+                <path d="M30 10h40v15l-15 15v10l15 15v15H30V65l15-15V25L30 10z" stroke="#d4af37" stroke-width="3" fill="none"/>
+                <path d="M35 15h30v12l-12 12v8l12 12v11H35V59l12-12V27l-12-12V15z" fill="rgba(212, 175, 55, 0.2)"/>
+                <path d="M40 70h20v15H40V70z" fill="#d4af37" opacity="0.6">
+                    <animate attributeName="height" values="0;15;0" dur="4s" repeatCount="indefinite"/>
+                    <animate attributeName="y" values="85;70;85" dur="4s" repeatCount="indefinite"/>
+                </path>
+            </svg>
+        </section>
+
+        <section class="editor-card" id="editor">
+            <div class="form-group">
+                <label>标题</label>
+                <input type="text" class="title-input" id="capsule-title" placeholder="给你的时间胶囊起个名字..." maxlength="50">
+                <div class="draft-indicator" id="draft-indicator" style="display: none;">自动保存中</div>
+            </div>
+            <div class="form-group">
+                <label>内容</label>
+                <textarea class="content-textarea" id="capsule-content" placeholder="写下你想对未来自己说的话..." maxlength="5000"></textarea>
+            </div>
+            <div class="time-selector">
+                <label>选择解锁时间</label>
+                <div class="time-options">
+                    <button class="time-btn" data-time="2h">2小时<span class="badge">体验</span></button>
+                    <button class="time-btn" data-time="1d">1天</button>
+                    <button class="time-btn" data-time="1mo">1个月</button>
+                    <button class="time-btn" data-time="1y">1年</button>
+                    <button class="time-btn" data-time="5y">5年</button>
+                    <button class="time-btn" data-time="10y">10年</button>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="save-btn">保存草稿</button>
+                <button class="btn btn-primary" id="seal-btn" disabled>封存胶囊</button>
+            </div>
+        </section>
+
+        <section class="capsules-section">
+            <h2 class="section-title">我的时间胶囊</h2>
+            <div class="capsules-grid" id="capsules-grid">
+                <div class="empty-state" id="empty-state">
+                    <svg class="empty-icon" viewBox="0 0 100 100" fill="none">
+                        <circle cx="50" cy="50" r="40" stroke="#8888aa" stroke-width="2" stroke-dasharray="5 5"/>
+                        <path d="M35 40h30M35 50h20M35 60h25" stroke="#8888aa" stroke-width="2"/>
+                    </svg>
+                    <p>还没有时间胶囊</p>
+                    <p style="font-size: 0.9rem; margin-top: 8px;">创建一个，穿越时空与未来的自己对话</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <div class="modal-overlay" id="unlock-modal">
+        <div class="modal">
+            <h3>✨ 时光已至</h3>
+            <p id="modal-message">属于你的时间胶囊已可开启</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="modal-close">稍后再说</button>
+                <button class="btn btn-primary" id="modal-open">开启胶囊</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationId;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function createParticles() {
+            particles = [];
+            const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2 + 0.5,
+                    speedX: (Math.random() - 0.5) * 0.3,
+                    speedY: (Math.random() - 0.5) * 0.3,
+                    opacity: Math.random() * 0.5 + 0.2,
+                    twinkle: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.twinkle += 0.02;
+                
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+                
+                const opacity = p.opacity * (0.5 + 0.5 * Math.sin(p.twinkle));
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(212, 175, 55, ${opacity})`;
+                ctx.fill();
+            });
+            
+            animationId = requestAnimationFrame(drawParticles);
+        }
+
+        resizeCanvas();
+        createParticles();
+        drawParticles();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            createParticles();
+        });
+
+        const STORAGE_KEY = 'time_capsules';
+        const DRAFT_KEY = 'time_capsule_draft';
+
+        let capsules = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        let selectedTime = null;
+        let currentEditId = null;
+        let updateInterval = null;
+
+        const titleInput = document.getElementById('capsule-title');
+        const contentInput = document.getElementById('capsule-content');
+        const saveBtn = document.getElementById('save-btn');
+        const sealBtn = document.getElementById('seal-btn');
+        const draftIndicator = document.getElementById('draft-indicator');
+        const capsulesGrid = document.getElementById('capsules-grid');
+        const emptyState = document.getElementById('empty-state');
+        const notification = document.getElementById('notification');
+        const timeBtns = document.querySelectorAll('.time-btn');
+        const unlockModal = document.getElementById('unlock-modal');
+        const modalClose = document.getElementById('modal-close');
+        const modalOpen = document.getElementById('modal-open');
+
+        function getTimeDuration(timeKey) {
+            const durations = {
+                '2h': 2 * 60 * 60 * 1000,
+                '1d': 24 * 60 * 60 * 1000,
+                '1mo': 30 * 24 * 60 * 60 * 1000,
+                '1y': 365 * 24 * 60 * 60 * 1000,
+                '5y': 5 * 365 * 24 * 60 * 60 * 1000,
+                '10y': 10 * 365 * 24 * 60 * 60 * 1000
+            };
+            return durations[timeKey] || 0;
+        }
+
+        function getTimeLabel(timeKey) {
+            const labels = {
+                '2h': '2小时',
+                '1d': '1天',
+                '1mo': '1个月',
+                '1y': '1年',
+                '5y': '5年',
+                '10y': '10年'
+            };
+            return labels[timeKey] || timeKey;
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        }
+
+        function showNotification(message) {
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => notification.classList.remove('show'), 3000);
+        }
+
+        function validateForm() {
+            const title = titleInput.value.trim();
+            const content = contentInput.value.trim();
+            sealBtn.disabled = !title || !content || !selectedTime;
+        }
+
+        function loadDraft() {
+            const draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
+            if (draft) {
+                titleInput.value = draft.title || '';
+                contentInput.value = draft.content || '';
+                validateForm();
+            }
+        }
+
+        function saveDraft() {
+            draftIndicator.style.display = 'flex';
+            const draft = {
+                title: titleInput.value,
+                content: contentInput.value,
+                lastSaved: Date.now()
+            };
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+            setTimeout(() => {
+                draftIndicator.style.display = 'none';
+            }, 1000);
+        }
+
+        let draftTimeout = null;
+        titleInput.addEventListener('input', () => {
+            clearTimeout(draftTimeout);
+            draftTimeout = setTimeout(saveDraft, 1000);
+            validateForm();
+        });
+
+        contentInput.addEventListener('input', () => {
+            clearTimeout(draftTimeout);
+            draftTimeout = setTimeout(saveDraft, 1000);
+            validateForm();
+        });
+
+        timeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                timeBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedTime = btn.dataset.time;
+                validateForm();
+            });
+        });
+
+        saveBtn.addEventListener('click', () => {
+            const title = titleInput.value.trim();
+            const content = contentInput.value.trim();
+            
+            if (!title || !content) {
+                showNotification('请填写标题和内容');
+                return;
+            }
+            
+            const capsule = {
+                id: currentEditId || generateId(),
+                title,
+                content,
+                status: 'draft',
+                createdAt: currentEditId ? capsules.find(c => c.id === currentEditId)?.createdAt : Date.now(),
+                updatedAt: Date.now()
+            };
+            
+            const existingIndex = capsules.findIndex(c => c.id === capsule.id);
+            if (existingIndex >= 0) {
+                capsules[existingIndex] = capsule;
+            } else {
+                capsules.unshift(capsule);
+            }
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(capsules));
+            localStorage.removeItem(DRAFT_KEY);
+            currentEditId = capsule.id;
+            
+            showNotification('草稿已保存');
+            renderCapsules();
+        });
+
+        sealBtn.addEventListener('click', () => {
+            const title = titleInput.value.trim();
+            const content = contentInput.value.trim();
+            
+            if (!title || !content || !selectedTime) {
+                showNotification('请完善胶囊信息并选择解锁时间');
+                return;
+            }
+            
+            const capsule = {
+                id: currentEditId || generateId(),
+                title,
+                content,
+                status: 'sealed',
+                createdAt: currentEditId ? capsules.find(c => c.id === currentEditId)?.createdAt : Date.now(),
+                sealedAt: Date.now(),
+                unlockAt: Date.now() + getTimeDuration(selectedTime),
+                duration: selectedTime
+            };
+            
+            const existingIndex = capsules.findIndex(c => c.id === capsule.id);
+            if (existingIndex >= 0) {
+                capsules[existingIndex] = capsule;
+            } else {
+                capsules.unshift(capsule);
+            }
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(capsules));
+            localStorage.removeItem(DRAFT_KEY);
+            
+            titleInput.value = '';
+            contentInput.value = '';
+            selectedTime = null;
+            timeBtns.forEach(b => b.classList.remove('selected'));
+            currentEditId = null;
+            sealBtn.disabled = true;
+            
+            showNotification('时间胶囊已封存，等待时光流转...');
+            renderCapsules();
+        });
+
+        function formatCountdown(ms) {
+            if (ms <= 0) return { value: '已解锁', label: '' };
+            
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            if (days > 0) {
+                return { 
+                    value: `${days}天 ${hours % 24}小时`, 
+                    label: '后解锁' 
+                };
+            }
+            if (hours > 0) {
+                return { 
+                    value: `${hours}小时 ${minutes % 60}分`, 
+                    label: '后解锁' 
+                };
+            }
+            if (minutes > 0) {
+                return { 
+                    value: `${minutes}分 ${seconds % 60}秒`, 
+                    label: '后解锁' 
+                };
+            }
+            return { 
+                value: `${seconds}秒`, 
+                label: '后解锁' 
+            };
+        }
+
+        function checkCapsuleUnlock() {
+            const now = Date.now();
+            let needsRender = false;
+            let unlockedCapsule = null;
+            
+            capsules.forEach(capsule => {
+                if (capsule.status === 'sealed' && capsule.unlockAt && capsule.unlockAt <= now) {
+                    capsule.status = 'unlocked';
+                    needsRender = true;
+                    unlockedCapsule = capsule;
+                }
+            });
+            
+            if (needsRender) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(capsules));
+                renderCapsules();
+            }
+            
+            if (unlockedCapsule) {
+                document.getElementById('modal-message').textContent = `"${unlockedCapsule.title}" 可以开启了`;
+                unlockModal.classList.add('show');
+                modalOpen.onclick = () => {
+                    unlockModal.classList.remove('show');
+                    const card = document.querySelector(`[data-id="${unlockedCapsule.id}"]`);
+                    if (card) {
+                        card.classList.add('expanded');
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                };
+            }
+        }
+
+        function renderCapsules() {
+            const draftCapsules = capsules.filter(c => c.status === 'draft');
+            const sealedCapsules = capsules.filter(c => c.status === 'sealed' || c.status === 'unlocked');
+            
+            if (draftCapsules.length === 0 && sealedCapsules.length === 0) {
+                emptyState.style.display = 'block';
+                const cards = capsulesGrid.querySelectorAll('.capsule-card');
+                cards.forEach(card => card.remove());
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            const existingCards = capsulesGrid.querySelectorAll('.capsule-card');
+            existingCards.forEach(card => card.remove());
+            
+            sealedCapsules.forEach(capsule => {
+                const card = document.createElement('div');
+                card.className = `capsule-card ${capsule.status === 'sealed' ? 'sealed' : 'unlocked'}`;
+                card.dataset.id = capsule.id;
+                
+                const countdown = formatCountdown(capsule.unlockAt - Date.now());
+                
+                card.innerHTML = `
+                    <div class="capsule-header">
+                        <span class="capsule-title">${escapeHtml(capsule.title)}</span>
+                        <span class="capsule-status ${capsule.status === 'sealed' ? 'status-sealed' : 'status-unlocked'}">
+                            ${capsule.status === 'sealed' ? '封存中' : '已解锁'}
+                        </span>
+                    </div>
+                    <div class="countdown ${capsule.status === 'unlocked' ? 'unlocked' : ''}">${countdown.value}</div>
+                    <div class="countdown-label">${countdown.label}</div>
+                    <div class="capsule-content">${escapeHtml(capsule.content)}</div>
+                    <div class="capsule-actions">
+                        ${capsule.status === 'unlocked' ? `
+                            <button class="btn btn-secondary delete-btn" data-id="${capsule.id}">删除</button>
+                        ` : ''}
+                    </div>
+                `;
+                
+                card.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-btn')) {
+                        deleteCapsule(e.target.dataset.id);
+                        return;
+                    }
+                    
+                    if (capsule.status === 'unlocked') {
+                        card.classList.toggle('expanded');
+                    } else {
+                        const remaining = capsule.unlockAt - Date.now();
+                        if (remaining <= 0) {
+                            card.classList.toggle('expanded');
+                        } else {
+                            showNotification('时间胶囊还在沉睡中...');
+                        }
+                    }
+                });
+                
+                capsulesGrid.appendChild(card);
+            });
+            
+            if (updateInterval) clearInterval(updateInterval);
+            updateInterval = setInterval(() => {
+                checkCapsuleUnlock();
+                document.querySelectorAll('.capsule-card.sealed').forEach(card => {
+                    const capsule = capsules.find(c => c.id === card.dataset.id);
+                    if (capsule) {
+                        const countdown = formatCountdown(capsule.unlockAt - Date.now());
+                        const countdownEl = card.querySelector('.countdown');
+                        const labelEl = card.querySelector('.countdown-label');
+                        if (countdownEl) countdownEl.textContent = countdown.value;
+                        if (labelEl) labelEl.textContent = countdown.label;
+                        
+                        if (capsule.unlockAt - Date.now() <= 0) {
+                            card.classList.remove('sealed');
+                            card.classList.add('unlocked');
+                            const statusEl = card.querySelector('.capsule-status');
+                            if (statusEl) {
+                                statusEl.classList.remove('status-sealed');
+                                statusEl.classList.add('status-unlocked');
+                                statusEl.textContent = '已解锁';
+                            }
+                        }
+                    }
+                });
+            }, 1000);
+        }
+
+        function deleteCapsule(id) {
+            capsules = capsules.filter(c => c.id !== id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(capsules));
+            renderCapsules();
+            showNotification('时间胶囊已删除');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        modalClose.addEventListener('click', () => {
+            unlockModal.classList.remove('show');
+        });
+
+        unlockModal.addEventListener('click', (e) => {
+            if (e.target === unlockModal) {
+                unlockModal.classList.remove('show');
+            }
+        });
+
+        loadDraft();
+        renderCapsules();
+        checkCapsuleUnlock();
+    </script>
+</body>
+</html>
